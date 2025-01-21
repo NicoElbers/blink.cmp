@@ -50,6 +50,12 @@ function docs.render_detail_and_documentation(opts)
   vim.api.nvim_buf_clear_namespace(opts.bufnr, highlight_ns, 0, -1)
 
   if #detail_lines > 0 and opts.use_treesitter_highlighting then
+    if vim.bo.filetype == 'zig' then
+      local lines = vim.api.nvim_buf_get_lines(opts.bufnr, 0, #detail_lines, false)
+
+      if lines[1] and string.find(lines[1], 'File') then return end
+    end
+
     docs.highlight_with_treesitter(opts.bufnr, vim.bo.filetype, 0, #detail_lines)
   end
 
@@ -83,7 +89,11 @@ function docs.highlight_with_treesitter(bufnr, filetype, start_line, end_line)
   local success, trees = pcall(vim.treesitter.get_parser, bufnr, root_lang)
   if not success or not trees then return end
 
+  -- The freeze happened after this line
+
   trees:parse({ start_line, end_line })
+
+  -- The freeze happened before this
 
   trees:for_each_tree(function(tree, tstree)
     local lang = tstree:lang()
